@@ -14,9 +14,7 @@ def text_reply(msg):
     key = '34afd60af5564e4281073b0faba070fc'  
     api = 'http://www.tuling123.com/openapi/api?key=' + key + '&info='
     
-    word= msg['Text'].encode('utf-8')
-
-    
+    word= msg['Text'].encode('utf-8')    
     request = api + word 
     response = getHtml(request)  
     dic_json = json.loads(response)  

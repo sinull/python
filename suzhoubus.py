@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
-#python2
 import os, urllib2, requests, gzip,urllib,json,sys,re
 from StringIO import StringIO
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
 
 def get_html(url):
-    line=raw_input("苏州公交实时查询系统\n请输入车次\n例 8，快8:".decode("utf-8").encode("gb2312"))
-    if line != '' :          
-        url=url+urllib.quote(line.decode('GBK').encode('utf-8'))
-        req = urllib2.Request(url=url,headers={'Accept-Encoding': 'gzip, deflate',})
-        res = urllib2.urlopen(req)
-        html = res.read()
-        if res.info().get('Content-Encoding') == 'gzip':
-            buf = StringIO(html)
-            f = gzip.GzipFile(fileobj=buf)
-            html = f.read()
-            return html
-    else:
-        return '123'
+    line=raw_input(u'苏州公交实时查询系统\n请输入车次\n例 8，快8：').decode('GBK')
+    url=url+urllib.quote(line.encode('utf-8'))
+    req = urllib2.Request(url=url,headers={'Accept-Encoding': 'gzip, deflate',})
+    res = urllib2.urlopen(req)
+    html = res.read()
+    if res.info().get('Content-Encoding') == 'gzip':
+        buf = StringIO(html)
+        f = gzip.GzipFile(fileobj=buf)
+        html = f.read()
+        return html
+    
 def parse (html):
     bs = BeautifulSoup(html, 'html.parser', from_encoding='utf-8')
     links = bs.find_all('dd')
@@ -55,7 +52,7 @@ def refun(url):
     return newurllist
 
 def get_html2(url,urllist):
-    line=raw_input('输入车次序号查看实时车辆：'.decode("utf-8").encode("gb2312")).decode(sys.stdin.encoding )
+    line=raw_input(u'输入车次序号查看实时车辆：').decode(sys.stdin.encoding )
     req = urllib2.Request(url=url,headers={'Accept-Encoding': 'gzip, deflate',})
     if int(line)<len(urllist):
         req = urllib2.Request(url=url,data = urllist[int(line)],headers={'Accept-Encoding': 'gzip, deflate',})
@@ -80,10 +77,12 @@ def pretty_print2(line):
         else :
             pt.add_row([i['StationCName'],(u'*'),(u'*')])
             list1.append(i['BusInfo'])
-
-    pt.align = "c"
-    print pt.get_string(),'\n'
-  
+    if len(list1)==len(line):
+        print u'暂无信息\n'
+    else:
+        pt.align = "c"
+        print pt.get_string(),'\n'
+      
 def busstart():
     while 1:
         data = get_html('http://bus.2500.tv/line.php?line=')
@@ -101,6 +100,7 @@ def busstart():
 
 if __name__ == '__main__':
     busstart()
+    
 
                 
                 
