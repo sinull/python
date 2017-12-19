@@ -1,5 +1,7 @@
 #encoding:utf-8
 
+#python2.7
+
 import urllib2
 import json
 
