@@ -3,10 +3,9 @@ import os, urllib2, requests, gzip,urllib,json,sys,re
 from StringIO import StringIO
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
+import time,datetime
 
 def get_html(url):
-    line=raw_input(u'苏州公交实时查询系统\n请输入车次\n例 8，快8：').decode('GBK')
-    url=url+urllib.quote(line.encode('utf-8'))
     req = urllib2.Request(url=url,headers={'Accept-Encoding': 'gzip, deflate',})
     res = urllib2.urlopen(req)
     html = res.read()
@@ -33,15 +32,15 @@ def parse (html):
     return stationlist,linelist,urllist,g
 
 def pretty_print(station,line,g):
-    head = u'线路,序号,始末站'.split(',')
+    head = '线路,站点,序号'.split(',')
     pt = PrettyTable()
     pt._set_field_names(head)
-    pt.align = "c"
     if g !=0:
         for i in range(g):
-            pt.add_row([line[i],'('+str(i)+')',station[i]])      
-        print pt.get_string()
-        return 'suc'
+            pt.add_row([line[i],station[i],i])      
+        print pt
+    else:
+        print u'输入有误，或无此车次'
         
 def refun(url):
     newurllist=[]
@@ -52,10 +51,9 @@ def refun(url):
     return newurllist
 
 def get_html2(url,urllist):
-    line=raw_input(u'输入车次序号查看实时车辆：').decode(sys.stdin.encoding )
     req = urllib2.Request(url=url,headers={'Accept-Encoding': 'gzip, deflate',})
-    if int(line)<len(urllist):
-        req = urllib2.Request(url=url,data = urllist[int(line)],headers={'Accept-Encoding': 'gzip, deflate',})
+    for i in urllist: 
+        req = urllib2.Request(url=url,data = i,headers={'Accept-Encoding': 'gzip, deflate',})
         res = urllib2.urlopen(req)
         html = res.read()
         if res.info().get('Content-Encoding') == 'gzip':
@@ -64,48 +62,39 @@ def get_html2(url,urllist):
             html = f.read().decode('utf-8')
             html = html[1:]
             data = json.loads(html)
-            return data['data']
-
-def pretty_print2(line):
-    head = u'站点,车牌,时间'.split(',')
-    pt = PrettyTable()
-    pt._set_field_names(head)
-    list1 = []
-    for i in line:
-        if i['BusInfo']!='':
-            pt.add_row([i['StationCName'],i['BusInfo'],i['InTime']])
-        else :
-            pt.add_row([i['StationCName'],(u'*'),(u'*')])
-            list1.append(i['BusInfo'])
-    if len(list1)==len(line):
-        print u'暂无信息\n'
-    else:
-        pt.align = "c"
-        print pt.get_string(),'\n'
-      
-def busstart():
-    while 1:
-        data = get_html('http://bus.2500.tv/line.php?line=')
-        station,line,url,g = parse(data)
-        newurllist = refun(url)
-        while pretty_print(station,line,g) !='suc':
-            print u'输入有误\n'
-            break
-        else:
-            try:
-                data2 = get_html2('http://bus.2500.tv/api_line_status.php',newurllist)
-                pretty_print2(data2)
-            except:
-                print u'输入有误\n'
-
-if __name__ == '__main__':
-    busstart()
+            for i in data['data']:
+                if i['BusInfo']!='':
+                    yield i['BusInfo']
+                    
+def spider():
+    data = get_html('http://bus.2500.tv/line.php?line=%BF%EC')
+    station,line,url,g = parse(data)
+    #pretty_print(station,line,g)
+    dict1 = set()
+    newurllist = refun(url)
+    data2 = get_html2('http://bus.2500.tv/api_line_status.php',newurllist)
+    num = 0
+    for i in data2:
+        num = num+1
+        print num
+    return str(num)
     
 
-                
-                
-     
-                
+if __name__ == '__main__':
+    
+    while 1:
+        num = spider()
+        print u'完成一轮'
+        txt = file('data3.txt','a')
+        txt.write("\""+str(time.time())+"\""+":"+"\""+num+"\""+',')
+        txt.close()
+        
+                  
+
+
+
+            
+        
 
     
     
