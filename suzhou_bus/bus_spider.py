@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-#python2
+#python2.7
+
 import os, urllib2, requests, gzip,urllib,json,sys,re
 from StringIO import StringIO
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
 
+#手动输入车次，构造请求url,获得页面信息
 def get_html(url):
     line=raw_input("苏州公交实时查询系统\n请输入车次\n例 8，快8:".decode("utf-8").encode("gb2312"))
     if line != '' :          
@@ -19,6 +21,8 @@ def get_html(url):
             return html
     else:
         return '123'
+
+#解析页面内容，分别放在 stationlist、linelist 、urllist三个列表
 def parse (html):
     bs = BeautifulSoup(html, 'html.parser', from_encoding='utf-8')
     links = bs.find_all('dd')
@@ -32,9 +36,10 @@ def parse (html):
             linelist.append(b.find_all('p')[0].text)
     g= len(linelist)
     for c in range (g):
-        stationlist[c] = stationlist[c][38:]
+        stationlist[c] = stationlist[c][38:]#修复列表内容
     return stationlist,linelist,urllist,g
 
+#用pprint包输出车次信息
 def pretty_print(station,line,g):
     head = u'线路,序号,始末站'.split(',')
     pt = PrettyTable()
@@ -45,7 +50,8 @@ def pretty_print(station,line,g):
             pt.add_row([line[i],'('+str(i)+')',station[i]])      
         print pt.get_string()
         return 'suc'
-        
+
+#用正则获取具体的公交车lineid编号，用于第二次构建请求url        
 def refun(url):
     newurllist=[]
     pattern = re.compile('(lineID.*)&|(lineID.*)')
@@ -54,6 +60,7 @@ def refun(url):
         newurllist.append(num.group()[:15])
     return newurllist
 
+#第二次构造请求url,通过api接口请求具体的车辆信息
 def get_html2(url,urllist):
     line=raw_input('输入车次序号查看实时车辆：'.decode("utf-8").encode("gb2312")).decode(sys.stdin.encoding )
     req = urllib2.Request(url=url,headers={'Accept-Encoding': 'gzip, deflate',})
@@ -69,12 +76,14 @@ def get_html2(url,urllist):
             data = json.loads(html)
             return data['data']
 
+#用pprint打印最终显示的车辆信息，
 def pretty_print2(line):
     head = u'站点,车牌,时间'.split(',')
     pt = PrettyTable()
     pt._set_field_names(head)
     list1 = []
     for i in line:
+        #通过判断businfo字段有无打印不同内容
         if i['BusInfo']!='':
             pt.add_row([i['StationCName'],i['BusInfo'],i['InTime']])
         else :
@@ -83,7 +92,8 @@ def pretty_print2(line):
 
     pt.align = "c"
     print pt.get_string(),'\n'
-  
+    
+#程序入口处，循环爬取  
 def busstart():
     while 1:
         data = get_html('http://bus.2500.tv/line.php?line=')
